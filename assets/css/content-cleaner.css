@@ -1,0 +1,63 @@
+/**
+ * WordPress Word Markup Cleaner - Content Cleaner Styles
+ * 
+ * Note: The content cleaner is primarily a backend functionality.
+ * This CSS file is mostly for any frontend indications of cleaned content.
+ */
+
+/* Add a subtle indicator to content that has been cleaned by the plugin */
+.word-markup-cleaned {
+    /* Optional: Add a small indicator for content that has been cleaned */
+    position: relative;
+}
+
+/* Show an indicator on hover for admin users */
+body.logged-in .word-markup-cleaned:hover::before {
+    content: "Word markup cleaned";
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    pointer-events: none;
+    opacity: 0.7;
+    z-index: 100;
+    display: block;
+}
+
+/* Style for any Word markup that couldn't be cleaned (should be rare) */
+.mso-list, 
+div[style*="mso-"], 
+span[style*="mso-"], 
+p[style*="mso-"],
+[class*="Mso"] {
+    /* Override any remaining Word styles */
+    font-family: inherit !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    margin: inherit !important;
+    padding: inherit !important;
+}
+
+/* Ensure cleaned lists display properly */
+ul.word-markup-cleaned-list,
+ol.word-markup-cleaned-list {
+    margin-left: 1.5em;
+    padding-left: 0;
+}
+
+/* Ensure cleaned tables display properly */
+table.word-markup-cleaned-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+table.word-markup-cleaned-table td,
+table.word-markup-cleaned-table th {
+    padding: 0.5em;
+    border: 1px solid #ddd;
+}

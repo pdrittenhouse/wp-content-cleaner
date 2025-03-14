@@ -1,0 +1,252 @@
+/**
+ * WordPress Word Markup Cleaner - Logger Styles
+ */
+
+/* Log viewer container */
+.word-markup-log-viewer {
+    margin-bottom: 15px;
+}
+
+/* Log content container */
+.log-container {
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+    padding: 10px;
+    overflow: auto;
+    height: 500px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+/* Log content */
+.log-container pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-size: 12px;
+    line-height: 1.4;
+    font-family: Consolas, Monaco, monospace;
+}
+
+/* Log container when empty */
+.log-container.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* Log info and actions bar */
+.log-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+/* Log actions button group */
+.log-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.log-buttons form {
+    display: inline-block;
+}
+
+.log-size {
+    color: #666;
+}
+
+/* Log errors */
+.log-error {
+    padding: 20px;
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+    text-align: center;
+    height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.log-error p {
+    margin: 0;
+    color: #cc0000;
+    font-style: italic;
+}
+
+/* Log info text */
+.log-info {
+    color: #666;
+    font-size: 12px;
+    display: flex;
+    gap: 15px;
+}
+
+/* Log loading overlay */
+.log-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.log-loading span {
+    display: inline-block;
+    padding: 10px 15px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Log filter container */
+.log-filters {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.log-filters input[type="text"] {
+    flex: 1;
+}
+
+/* Auto-refresh toggle */
+.auto-refresh-toggle {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #666;
+}
+
+/* Log search highlight */
+.log-highlight {
+    background-color: #ffff00;
+    color: #000;
+}
+
+/* Log debug level indicators */
+.log-level-info {
+    color: #0073aa;
+}
+
+.log-level-warning {
+    color: #ff9900;
+}
+
+.log-level-error {
+    color: #dc3232;
+}
+
+/* Log file info */
+.log-file-info {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    font-size: 12px;
+}
+
+.log-file-info dl {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 5px;
+    margin: 0;
+}
+
+.log-file-info dt {
+    font-weight: bold;
+}
+
+.log-file-info dd {
+    margin: 0;
+}
+
+/* Copy notification */
+.copy-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.copy-notification.show {
+    opacity: 1;
+}
+
+/* Log expanded view (fullscreen) */
+.log-expanded {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    z-index: 99999;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.log-expanded .log-container {
+    flex: 1;
+    height: auto;
+    max-height: none;
+}
+
+.log-expanded .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.log-expanded .log-title {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.log-expanded .exit-expanded {
+    padding: 5px 10px;
+}
+
+/* Log status indicators */
+.log-status {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.log-status.enabled {
+    background-color: #4CAF50;
+}
+
+.log-status.disabled {
+    background-color: #ccc;
+}
+
+/* No log content message */
+.no-log-content {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}

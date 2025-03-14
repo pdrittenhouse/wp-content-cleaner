@@ -1,0 +1,610 @@
+/**
+ * WordPress Word Markup Cleaner - Admin Styles
+ */
+
+/* Postbox styling */
+.postbox-header {
+    padding: 8px 12px;
+    margin: 0; 
+    border-bottom: 1px solid #ccd0d4;
+}
+
+/* Lists in admin areas */ 
+.layout-cols {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 992px) {
+    .layout-cols {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.postbox ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+/* Tips box styling */
+.tips-box {
+    background: #f9f9f9;
+    border-left: 4px solid #4a77a8;
+    padding: 12px 15px;
+    margin-top: 15px;
+}
+
+.tips-box p {
+    margin: 0 0 8px 0;
+}
+
+.tips-box p:last-child {
+    margin-bottom: 0;
+}
+
+/* Test cleaner container */
+.test-cleaner-container {
+    margin-top: 20px;
+}
+
+/* Test content textarea */
+.postbox textarea[name="test_content"] {
+    width: 100%;
+    min-height: 200px;
+    font-family: monospace;
+    margin-bottom: 10px;
+}
+
+/* Cleaning results styling */
+.cleaning-results {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+}
+
+.cleaning-results h3 {
+    margin-top: 0;
+}
+
+/* Grid for stats and markup findings */
+.results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 782px) {
+    .results-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Code comparison section */
+.code-comparison {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 1400px) {
+    .code-comparison {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Code containers */
+.original-code,
+.cleaned-code {
+    grid-column: 1 / 3;
+}
+@media (min-width: 1400px) {
+    .original-code,
+    .cleaned-code  {
+        grid-column: unset;
+    }
+}
+.code-container {
+    max-height: 400px;
+    overflow: auto;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+/* Highlighted changes */
+.highlighted-changes {
+    margin-top: 20px;
+}
+
+.highlighted-container {
+    height: 400px;
+    overflow: auto;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.removed-markup {
+    background-color: #ffcccc;
+    color: #cc0000;
+}
+
+/* Content type tabs styling */
+.content-type-settings {
+    margin-top: 20px;
+    border: 1px solid #ccd0d4;
+    background: #fff;
+    padding: 10px;
+}
+
+.content-type-selector {
+    margin-bottom: 20px;
+}
+
+.content-type-select {
+    min-width: 250px;
+}
+
+.cleaning-options {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cleaning-options th {
+    text-align: left;
+    padding: 8px;
+    font-weight: bold;
+    width: 70%;
+}
+
+.cleaning-options td {
+    padding: 8px;
+}
+
+.description-row {
+    background-color: #f9f9f9;
+}
+
+.setting-description {
+    padding: 0 8px 12px 8px;
+    color: #666;
+    font-size: 0.9em;
+    border-bottom: 1px solid #eee;
+}
+
+/* Field type settings styling */
+.field-type-checkboxes {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    height: 150px;
+    overflow-y: auto;
+}
+
+.field-type-checkboxes label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.acf-field-type-info {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.field-type-list {
+    /* columns: 2;
+    -webkit-columns: 2;
+    -moz-columns: 2; */
+}
+
+@media (max-width: 782px) {
+    .field-type-list {
+        /* columns: 1;
+        -webkit-columns: 1;
+        -moz-columns: 1; */
+    }
+}
+
+.field-type-list li {
+    margin-bottom: 5px;
+}
+
+/* Field type indicator badges in the admin */
+.acf-field-text,
+.acf-field-textarea,
+.acf-field-wysiwyg,
+.acf-field-url,
+.acf-field-email {
+    position: relative;
+}
+
+.acf-field-text:after,
+.acf-field-textarea:after,
+.acf-field-wysiwyg:after,
+.acf-field-url:after,
+.acf-field-email:after {
+    content: "Cleaned";
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 10px;
+    background: #4CAF50;
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    opacity: 0.8;
+    z-index: 100;
+}
+
+/* Show badge only when field has focus or is being hovered */
+.acf-field-text:after,
+.acf-field-textarea:after,
+.acf-field-url:after,
+.acf-field-email:after {
+    display: none;
+}
+
+.acf-field-text:hover:after,
+.acf-field-textarea:hover:after,
+.acf-field-url:hover:after,
+.acf-field-email:hover:after,
+.acf-field-text.focused:after,
+.acf-field-textarea.focused:after,
+.acf-field-url.focused:after,
+.acf-field-email.focused:after {
+    display: block;
+}
+
+/* Always show badge for WYSIWYG fields */
+.acf-field-wysiwyg:after {
+    display: block;
+}
+
+/* Disable the display when cleaning is disabled */
+.word-markup-cleaner-disabled .acf-field-text:after,
+.word-markup-cleaner-disabled .acf-field-textarea:after,
+.word-markup-cleaner-disabled .acf-field-wysiwyg:after,
+.word-markup-cleaner-disabled .acf-field-url:after,
+.word-markup-cleaner-disabled .acf-field-email:after {
+    content: "Not Cleaned";
+    background: #999;
+}
+
+/* Tab styling */
+.word-markup-tabs {
+    /* margin-bottom: 20px; */
+    border-bottom: 1px solid #ccc;
+}
+
+.word-markup-tabs .nav-tab {
+    margin-left: 0;
+    margin-right: 0.5em;
+    transition-property: background, color;
+    transition-duration: .05s;
+    transition-timing-function: ease-in-out;
+    box-shadow: none;
+}
+
+.word-markup-tabs .nav-tab:hover {
+    background-color: #f0f0f1;
+}
+
+.word-markup-tabs  .nav-tab-active {
+    background-color: #fff;
+    border-bottom-color: #fff;
+}
+
+.word-markup-tabs  .nav-tab-active:hover {
+    background-color: #fff;
+    border-bottom-color: #fff;
+}
+
+.word-markup-tab-content {
+    display: none;
+    /* padding: 15px 0; */
+}
+
+.word-markup-tab-content .postbox {
+    border-top: none;
+}
+
+.word-markup-tab-content.active {
+    display: block;
+}
+
+/* Make sure we're not messing up other styles */
+.word-markup-grid {
+    display: block;
+    gap: 0;
+}
+
+/* Preserve existing styles but adapt for tab layout */
+.word-markup-left,
+.word-markup-right {
+    width: 100%;
+    margin-top: 0;
+}
+
+/* Style the testing area consistently inside tabs */
+.test-cleaner-container {
+    margin-top: 0;
+}
+
+/* Keep responsiveness */
+@media (min-width: 783px) {
+    .word-markup-grid.debug-enabled {
+        display: block;
+    }
+}
+
+/* Cache tab styles */
+.cache-statistics {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.cache-statistics .layout-cols {
+    display: flex;
+    gap: 30px;
+}
+
+.cache-statistics .layout-cols > div {
+    flex: 1;
+}
+
+.cache-actions {
+    margin-top: 15px;
+}
+
+.cache-settings {
+    margin-top: 20px;
+}
+
+/* Test Cleaner Enhancements */
+.test-content-container {
+    margin-bottom: 20px;
+}
+
+.test-content-container textarea {
+    width: 100%;
+    min-height: 200px;
+    font-family: monospace;
+    padding: 10px;
+    margin-top: 8px;
+}
+
+/* Advanced mode toggle */
+.toggle-advanced {
+    display: block;
+    margin: 15px 0;
+    font-weight: bold;
+}
+
+.advanced-options {
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    padding: 15px;
+    margin: 10px 0 20px;
+    border-radius: 4px;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.option-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.option-description {
+    color: #666;
+    font-size: 12px;
+    margin: 5px 0 0 23px;
+}
+
+.content-type-selection {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.option-actions {
+    margin-top: 15px;
+}
+
+.test-actions {
+    margin-top: 20px;
+}
+
+/* Results styling */
+.cleaning-results {
+    margin-top: 30px;
+    border-top: 2px solid #2271b1;
+    padding-top: 20px;
+}
+
+.results-meta {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.content-type-info, 
+.options-applied {
+    background: #f0f6fc;
+    padding: 12px;
+    border-radius: 4px;
+    border-left: 4px solid #2271b1;
+}
+
+.content-type-label,
+.options-label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.content-type-value {
+    font-family: monospace;
+    background: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+}
+
+.options-list {
+    margin: 8px 0 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 5px;
+}
+
+.options-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 8px;
+    background: #fff;
+    border-radius: 3px;
+    margin: 0;
+    border: 1px solid #ddd;
+}
+
+.options-list li.enabled {
+    border-left: 3px solid #46b450;
+}
+
+.options-list li.disabled {
+    border-left: 3px solid #dc3232;
+    color: #888;
+}
+
+.option-status {
+    font-weight: bold;
+}
+
+.enabled .option-status {
+    color: #46b450;
+}
+
+.disabled .option-status {
+    color: #dc3232;
+}
+
+.effectiveness-chart {
+    margin: 20px 0;
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.chart-container {
+    margin-top: 10px;
+}
+
+.chart-bar {
+    height: 30px;
+    background: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.bar-original {
+    background: #999;
+    color: #fff;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    font-size: 12px;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.bar-cleaned {
+    background: #2271b1;
+    color: #fff;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    font-size: 12px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.chart-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+/* Enhancing existing code-comparison */
+.code-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.code-container {
+    max-height: 300px;
+    overflow: auto;
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.removed-markup {
+    background-color: #ffdddd;
+    color: #cc0000;
+    text-decoration: line-through;
+    padding: 2px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 782px) {
+    .options-grid,
+    .options-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .code-comparison {
+        grid-template-columns: 1fr;
+    }
+    
+    .results-meta {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
