@@ -27,12 +27,22 @@ This plugin serves as a safety net for your content team, automatically removing
 
 ### Key Features
 
-* **Automatic Cleaning**: Removes Word markup as content is saved
-* **Structure Preservation**: Maintains tables and lists while removing unnecessary formatting
-* **ACF Integration**: Works with Advanced Custom Fields (text, textarea, WYSIWYG, repeater, flexible content)
-* **Debug Logging**: Optional debug mode to monitor and troubleshoot the cleaning process
-* **Extensive Flexibility**: Configurable settings to adapt to your specific needs
-* **High Performance**: Optimized for large content with caching and chunked processing
+* **Automatic Cleaning:** Removes Word markup as content is saved
+* **DOM Processing:** Uses an intelligent DOM-based processing engine for efficient cleaning
+* **Structure Preservation:** Maintains tables and lists while removing unnecessary formatting
+* **ACF Integration:** Works with Advanced Custom Fields (text, textarea, WYSIWYG, repeater, flexible content)
+* **Debug Logging:** Optional debug mode to monitor and troubleshoot the cleaning process
+* **Extensive Flexibility:** Configurable settings to adapt to your specific needs
+* **High Performance:** Optimized for large content with caching and chunked processing
+
+### How It Works
+
+When content is saved in WordPress, the plugin detects Microsoft Word markup and removes:
+
+The plugin offers two processing methods:
+
+* **DOM-based Processing (Default):** Efficiently processes only elements containing Word markup, preserving elements that don't need cleaning
+* **Legacy Regex Processing:** Provides fallback compatibility for complex content structures
 
 ### What Gets Cleaned
 
@@ -41,7 +51,6 @@ This plugin serves as a safety net for your content team, automatically removing
 * MSO class attributes and inline styles
 * Font and styling attributes that override your theme
 * Empty spans and other unnecessary elements
-* And much more unwanted markup
 
 ### Benefits
 
@@ -51,18 +60,14 @@ This plugin serves as a safety net for your content team, automatically removing
 * Better compatibility with theme styling
 * Less headaches for developers and content editors
 
-### Acknowledgments
-
-This plugin is based on the original work by Patrick Rittenhouse and has been refactored for better performance, maintainability, and expanded features.
-
-== Installation ==
+### Installation
 
 1. Upload the `wordpress-word-markup-cleaner` folder to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Go to Tools > Word Markup Cleaner to configure settings
 4. That's it! The plugin will automatically clean Word markup when content is saved
 
-== Frequently Asked Questions ==
+### Frequently Asked Questions
 
 = Will this plugin affect my existing content? =
 
@@ -92,7 +97,7 @@ Yes, the plugin includes options to enable/disable content cleaning, ACF field c
 
 Yes, you can enable debug logging in the plugin settings to keep a detailed log of all cleaning operations.
 
-== Screenshots ==
+### Screenshots
 
 1. Plugin overview
 [About]: https://ps.w.org/wordpress-word-markup-cleaner/assets/img/screenshot-about.png
@@ -109,9 +114,10 @@ Yes, you can enable debug logging in the plugin settings to keep a detailed log 
 4. Debug log viewer for detailed insights
 [Debug Log]: https://ps.w.org/wordpress-word-markup-cleaner/assets/img/screenshot-debug-log.png
 
-== Changelog ==
+### Changelog
 
 = 3.5 =
+* Added DOM-based processing engine for more efficient cleaning
 * Added centralized settings management for improved plugin architecture
 * Added advanced caching mechanism for content type settings
 * Enhanced caching of cleaning settings for better performance
@@ -197,10 +203,10 @@ Yes, you can enable debug logging in the plugin settings to keep a detailed log 
 = 1.0 =
 * Initial release
 
-== Upgrade Notice ==
+### Upgrade Notice
 
 = 3.5 =
-Important architecture update that improves settings management and adds advanced caching for cleaning settings to enhances performance, and adds rate limiting to log operations for improved security. Fixes compatibility issues with certain WordPress configurations, including an improved test cleaner display and more accurate Word markup detection.
+Major architecture update that improves settings management, adds DOM-based processing for more efficient cleaning, adds advanced caching for cleaning settings to enhances performance, and adds rate limiting to log operations for improved security. Fixes compatibility issues with certain WordPress configurations, including an improved test cleaner display and more accurate Word markup detection.
 
 = 3.4 =
 Major performance update with optimized processing for large content blocks, smart caching, improved font handling, and memory usage reduction. Adds "Strip All Styles" option for complete removal of style attributes.
@@ -217,13 +223,16 @@ Important update adds support for ACF Blocks in Gutenberg editor, improving comp
 = 3.2 =
 Added targeted ACF field type cleaning for better performance, field type configuration UI, and optimized processing for complex nested ACF fields.
 
-== Development ==
+### Development
 
 The plugin is maintained on GitHub. Pull requests and bug reports are welcome:
 
-[GitHub Repository](https://github.com/yourusername/wordpress-word-markup-cleaner)
+[GitHub Repository](https://github.com/pdrittenhouse/wp-content-cleaner)
 
-== Credits ==
+### Credits
 
-* Original concept by Patrick Rittenhouse
+* Original concept by P.D. Rittenhouse
+
+### Acknowledgments
+
 * Icon by [Freepik](https://www.freepik.com) from [Flaticon](https://www.flaticon.com/)
