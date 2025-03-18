@@ -176,6 +176,20 @@ class WP_Word_Markup_Cleaner_Content {
     private $cache_misses = 0;
 
     /**
+     * DOM Processor instance
+     *
+     * @var WP_Word_Markup_Cleaner_DOM_Processor
+     */
+    private $dom_processor = null;
+
+    /**
+     * Flag to track if DOM processing is available and enabled
+     *
+     * @var bool
+     */
+    private $dom_processing_enabled = true;
+
+    /**
      * Initialize the content cleaner
      *
      * @param WP_Word_Markup_Cleaner_Logger $logger Logger instance
@@ -187,6 +201,7 @@ class WP_Word_Markup_Cleaner_Content {
         
         // Set default options based on settings manager values
         $this->options = array(
+            'use_dom_processing' => $this->settings_manager->get_option('use_dom_processing', true),
             'enable_content_cleaning' => $this->settings_manager->get_option('enable_content_cleaning', true),
             'enable_debug' => $this->settings_manager->get_option('enable_debug', false),
             'protect_tables' => $this->settings_manager->get_option('protect_tables', true),
@@ -531,24 +546,25 @@ class WP_Word_Markup_Cleaner_Content {
     }
 
     /**
-     * Clean Microsoft Word markup from content with selective processing
+     * Clean Microsoft Word markup from content with element-based processing
      * 
      * @param string $content The content to be cleaned
      * @param string $content_type Optional. The type of content (post, acf, etc.)
      * @param array $cleaning_level Optional. Specific cleaning levels to apply
      * @return string The cleaned content
      */
-    public function clean_content($content, $content_type = 'post', $cleaning_level = []) {
+    public function clean_content($content, $content_type = 'post', $cleaning_level = [])
+    {
         if (!is_string($content) || empty($content)) {
             return $content;
         }
-        
+
         // Default cleaning levels if none specified
         if (empty($cleaning_level)) {
             // Get the post type if we're in a filter context
             $current_filter = current_filter();
             $post_type = get_post_type();
-            
+
             // Determine content type based on current filter and context
             if ($content_type === 'post' && $post_type) {
                 // If we got a generic 'post' but have actual post type info, use that
@@ -557,10 +573,10 @@ class WP_Word_Markup_Cleaner_Content {
                 // We're in the main content filter but don't know post type yet
                 $content_type = 'wp_content';
             }
-            
+
             // Get default settings for this content type from settings manager
             $cleaning_level = $this->settings_manager->get_content_type_settings($content_type);
-            
+
             if ($this->options['enable_debug']) {
                 $this->logger->log_debug("Using default settings for {$content_type}");
             }
@@ -571,36 +587,21 @@ class WP_Word_Markup_Cleaner_Content {
             // We only need to strip styles, no Word markup to clean
             if ($this->options['enable_debug']) {
                 $this->logger->log_debug("No Word markup detected in {$content_type} content - only stripping styles");
-                $this->logger->log_debug("ORIGINAL CONTENT: {$content}");
             }
-            
+
             // Check for escaped quotes and unescape before processing
             $has_escaped_quotes = (strpos($content, '\"') !== false || strpos($content, "\'") !== false);
             $working_content = $has_escaped_quotes ? stripslashes($content) : $content;
-            
-            if ($this->options['enable_debug'] && $has_escaped_quotes) {
-                $this->logger->log_debug("Content has escaped quotes - unescaped for processing");
-                $this->logger->log_debug("UNESCAPED CONTENT: {$working_content}");
-            }
-            
+
             // Strip all style attributes and return
             $stripped_content = $this->safe_preg_replace(self::PATTERN_ALL_STYLE_ATTRS, '', $working_content, 'strip_all_styles');
 
-            if ($this->options['enable_debug']) {
-                $this->logger->log_debug("STRIPPED CONTENT: {$stripped_content}");
-            }
-            
-            if ($stripped_content !== $working_content && $this->options['enable_debug']) {
-                $this->logger->log_debug("Stripped all style attributes from content");
-                $this->logger->log_debug("Original length: " . strlen($working_content) . ", Stripped length: " . strlen($stripped_content));
-            }
-            
             // Re-escape quotes if they were escaped originally
             $result = $has_escaped_quotes ? addslashes($stripped_content) : $stripped_content;
-            
+
             return $result;
-        } 
-        
+        }
+
         // Early bail-out: Check if content contains Word markup
         if (!$this->contains_word_markup($content)) {
             if ($this->options['enable_debug']) {
@@ -611,7 +612,7 @@ class WP_Word_Markup_Cleaner_Content {
 
         // Create a cache key based on content, settings, and content type
         $cache_key = $this->get_content_cache_key($content, $cleaning_level, $content_type);
-        
+
         // Check if we have a cached version of this content
         $cached_content = $this->get_from_content_cache($cache_key);
         if ($cached_content !== false) {
@@ -624,7 +625,7 @@ class WP_Word_Markup_Cleaner_Content {
         }
 
         $this->cache_misses++;
-        
+
         // Check WordPress object cache (persistent across requests)
         if (function_exists('wp_cache_get')) {
             $wp_cached = wp_cache_get($cache_key, 'word_markup_cleaner');
@@ -632,160 +633,220 @@ class WP_Word_Markup_Cleaner_Content {
                 if ($this->options['enable_debug']) {
                     $this->logger->log_debug("WP OBJECT CACHE HIT for {$content_type}");
                 }
-                
+
                 // Also store in local cache for faster access
                 $this->add_to_content_cache($cache_key, $wp_cached);
-                
+
                 return $wp_cached;
             }
         }
-        
+
         // Special case - strip all HTML for excerpts
         if (!empty($cleaning_level['strip_all_html'])) {
             $cleaned = wp_strip_all_tags($content);
-            
+
             if ($this->options['enable_debug']) {
                 $this->logger->log_debug("Stripped all HTML tags from content");
             }
-            
+
             // Store in cache
             if (function_exists('wp_cache_set')) {
                 wp_cache_set($cache_key, $cleaned, 'word_markup_cleaner', 3600);
             }
-            
+
             return $cleaned;
         }
-        
+
+        // Determine whether to use DOM processing or legacy regex-based processing
+        $use_dom = $this->dom_processing_enabled;
+
+        // For simple content types or very small content, use regex-based approach
+        if (($content_type === 'acf_text' || $content_type === 'acf_textarea') &&
+            !$this->has_complex_html($content)
+        ) {
+            $use_dom = false;
+        }
+
+        // Process the content using the appropriate method
+        if ($use_dom) {
+            try {
+                // Use DOM-based element processing
+                $dom_processor = $this->get_dom_processor();
+                $cleaned = $dom_processor->process_content($content, $content_type, $cleaning_level);
+
+                $processing_stats = $dom_processor->get_statistics();
+                if ($this->options['enable_debug']) {
+                    $this->logger->log_debug("DOM Processing used for {$content_type}. Efficiency: {$processing_stats['efficiency']}%");
+                }
+
+                // Store in cache
+                $this->add_to_content_cache($cache_key, $cleaned);
+                if (function_exists('wp_cache_set')) {
+                    wp_cache_set($cache_key, $cleaned, 'word_markup_cleaner', 3600);
+                }
+
+                return $cleaned;
+            } catch (Exception $e) {
+                // If DOM processing fails, fall back to legacy processing
+                if ($this->options['enable_debug']) {
+                    $this->logger->log_debug("DOM Processing failed, falling back to legacy mode: " . $e->getMessage());
+                }
+
+                // Fall through to legacy method
+                $use_dom = false;
+            }
+        }
+
+        // Legacy regex-based processing
+        if (!$use_dom) {
+            $cleaned = $this->legacy_clean_content($content, $content_type, $cleaning_level);
+
+            // Store in cache
+            $this->add_to_content_cache($cache_key, $cleaned);
+            if (function_exists('wp_cache_set')) {
+                wp_cache_set($cache_key, $cleaned, 'word_markup_cleaner', 3600);
+            }
+
+            return $cleaned;
+        }
+
+        // We should never reach here, but just in case
+        return $content;
+    }
+
+    /**
+     * Legacy method for cleaning content using regex-based approach
+     * 
+     * @param string $content The content to be cleaned
+     * @param string $content_type The type of content
+     * @param array $cleaning_level Cleaning levels to apply
+     * @param array $tables Pre-extracted tables (optional)
+     * @param array $lists Pre-extracted lists (optional)
+     * @return string The cleaned content
+     */
+    public function legacy_clean_content($content, $content_type = 'post', $cleaning_level = [], $tables = [], $lists = [])
+    {
+        if ($this->options['enable_debug']) {
+            $this->logger->log_debug("USING LEGACY CLEANING for {$content_type}");
+        }
+
         // Optimize for simple text content without complex HTML
-        if (($content_type === 'acf_text' || $content_type === 'acf_textarea') && 
-            !$this->has_complex_html($content)) {
-            $cleaned = $this->clean_simple_text_content($content, $cleaning_level);
-            
-            // Store in cache
-            if (function_exists('wp_cache_set')) {
-                wp_cache_set($cache_key, $cleaned, 'word_markup_cleaner', 3600);
-            }
-            
-            return $cleaned;
+        if (($content_type === 'acf_text' || $content_type === 'acf_textarea') &&
+            !$this->has_complex_html($content)
+        ) {
+            return $this->clean_simple_text_content($content, $cleaning_level);
         }
-        
+
         // Process large content in chunks to avoid memory issues
         $max_size = 50000; // 50KB
-        if (strlen($content) > $max_size && 
+        if (
+            strlen($content) > $max_size &&
             strpos($content_type, '_chunk') === false && // Avoid recursive chunking
-            in_array($content_type, array('post', 'page', 'wp_content', 'acf_wysiwyg'))) {
-            $cleaned = $this->process_large_content_in_chunks($content, $content_type, $cleaning_level);
-            
-            // Store in cache
-            if (function_exists('wp_cache_set')) {
-                wp_cache_set($cache_key, $cleaned, 'word_markup_cleaner', 3600);
-            }
-            
-            return $cleaned;
+            in_array($content_type, array('post', 'page', 'wp_content', 'acf_wysiwyg'))
+        ) {
+            return $this->process_large_content_in_chunks($content, $content_type, $cleaning_level);
         }
-        
+
         // Log operation if debug is enabled
         if ($this->options['enable_debug']) {
             $this->logger->log_debug("CLEANING {$content_type} CONTENT");
             $this->logger->log_debug("CLEANING LEVELS: " . json_encode($cleaning_level));
         }
-        
+
         // Store the original content for comparison
         $original = $content;
-        
+
         // Check if the content has escaped quotes (common in ACF fields)
         $has_escaped_quotes = (strpos($content, '\"') !== false);
         $working_content = $has_escaped_quotes ? stripslashes($content) : $content;
-        
+
         if ($this->options['enable_debug'] && $has_escaped_quotes) {
             $this->logger->log_debug("Content has escaped quotes - unescaped for processing");
         }
-        
+
         // Track if we made any changes
         $modified = false;
-        
-        // Step 1: Store tables for protection if enabled
-        $tables = array();
-        
-        if (!empty($cleaning_level['protect_tables']) && strpos($working_content, '<table') !== false) {
+
+        // Step 1: Store tables for protection if enabled and not already extracted
+        if (empty($tables) && !empty($cleaning_level['protect_tables']) && strpos($working_content, '<table') !== false) {
             // Extract tables into the array and replace with markers
             preg_match_all(self::PATTERN_TABLES, $working_content, $matches);
-            
+
             foreach ($matches[0] as $index => $table) {
                 $marker = "TABLE_MARKER_" . $index;
                 $tables[$marker] = $table;
                 $working_content = str_replace($table, $marker, $working_content);
-                
+
                 if ($this->options['enable_debug']) {
                     $this->logger->log_debug("Protected table #$index");
                 }
             }
         }
-        
-        // Step 2: Store lists for protection if enabled
-        $lists = array();
-        
-        if (!empty($cleaning_level['protect_lists']) && 
-            (strpos($working_content, '<ul') !== false || 
-            strpos($working_content, '<ol') !== false || 
-            strpos($working_content, 'MsoListParagraph') !== false)) {
-            
+
+        // Step 2: Store lists for protection if enabled and not already extracted
+        if (
+            empty($lists) && !empty($cleaning_level['protect_lists']) &&
+            (strpos($working_content, '<ul') !== false ||
+                strpos($working_content, '<ol') !== false ||
+                strpos($working_content, 'MsoListParagraph') !== false)
+        ) {
+
             // Extract list patterns into the array and replace with markers
             // First detect ol/ul lists
             preg_match_all(self::PATTERN_LISTS, $working_content, $list_matches);
-            
+
             foreach ($list_matches[0] as $index => $list) {
                 $marker = "LIST_MARKER_" . $index;
                 $lists[$marker] = $list;
                 $working_content = str_replace($list, $marker, $working_content);
-                
+
                 if ($this->options['enable_debug']) {
                     $this->logger->log_debug("Protected list #$index");
                 }
             }
-            
+
             // Also detect consecutive li items with MsoListParagraph classes
             if (strpos($working_content, 'MsoListParagraph') !== false) {
                 preg_match_all(self::PATTERN_MSO_LISTS, $working_content, $mso_list_matches);
-                
+
                 foreach ($mso_list_matches[0] as $index => $mso_list) {
                     $marker = "MSOLIST_MARKER_" . ($index + count($lists));
                     $lists[$marker] = $mso_list;
                     $working_content = str_replace($mso_list, $marker, $working_content);
-                    
+
                     if ($this->options['enable_debug']) {
                         $this->logger->log_debug("Protected MSO list #" . ($index + count($lists)));
                     }
                 }
             }
         }
-        
+
         // Step 3: Clean general Word markup based on cleaning levels
         $old = $working_content;
-        
+
         // Remove Word XML namespaces and tags
         if (!empty($cleaning_level['xml_namespaces'])) {
             $working_content = $this->safe_preg_replace(self::PATTERN_O_TAGS, '', $working_content, 'o_tags');
             $working_content = $this->safe_preg_replace(self::PATTERN_XML_NAMESPACE, '', $working_content, 'xml_namespace');
         }
-        
+
         // Remove Word conditional comments
         if (!empty($cleaning_level['conditional_comments'])) {
             $working_content = $this->safe_preg_replace(self::PATTERN_CONDITIONAL_COMMENTS, '', $working_content, 'conditional_comments');
             $working_content = $this->safe_preg_replace(self::PATTERN_CONDITIONAL_TAGS, '', $working_content, 'conditional_tags');
         }
-        
+
         // Remove class="MsoX" or class="msoX" but keep other classes
         if (!empty($cleaning_level['mso_classes'])) {
             $working_content = $this->safe_preg_replace(self::PATTERN_MSO_CLASSES, '', $working_content, 'mso_classes');
         }
-        
+
         // Handle all potential direct font/style attributes
         if (!empty($cleaning_level['mso_styles'])) {
             $working_content = $this->safe_preg_replace(self::PATTERN_MSO_STYLES, '$1', $working_content, 'mso_styles');
             $working_content = $this->safe_preg_replace(self::PATTERN_MSO_STYLES_REMAINING, '', $working_content, 'mso_styles_remaining');
         }
-        
+
         // Clean font attributes if enabled
         if (!empty($cleaning_level['font_attributes'])) {
             $working_content = $this->safe_preg_replace(self::PATTERN_FONT_FAMILY_STYLE, '$1$2$5$6', $working_content, 'font_family_style');
@@ -797,26 +858,26 @@ class WP_Word_Markup_Cleaner_Content {
             $working_content = $this->safe_preg_replace(self::PATTERN_TAG_FONT_SIZE, '<$1', $working_content, 'tag_font_size');
             $working_content = $this->safe_preg_replace(self::PATTERN_TAG_FONT_WEIGHT, '<$1', $working_content, 'tag_font_weight');
             $working_content = $this->safe_preg_replace(self::PATTERN_TAG_FONT_STYLE, '<$1', $working_content, 'tag_font_style');
-            
+
             $working_content = $this->safe_preg_replace(self::PATTERN_TAG_TRAILING, '$1>', $working_content, 'tag_trailing');
         }
-        
+
         // Clean style attributes if enabled
         if (!empty($cleaning_level['style_attributes'])) {
             $working_content = $this->safe_preg_replace(self::PATTERN_STYLE_ATTRS, '<$1$2$3>', $working_content, 'style_attrs');
             $working_content = $this->safe_preg_replace(self::PATTERN_EMPTY_STYLE, '', $working_content, 'empty_style');
         }
-        
+
         // Clean lang attributes if enabled
         if (!empty($cleaning_level['lang_attributes'])) {
             $working_content = $this->safe_preg_replace(self::PATTERN_LANG_ATTRS, '<$1$2$3>', $working_content, 'lang_attrs');
         }
-        
+
         // Remove mso-* attributes from all tags
         if (!empty($cleaning_level['mso_styles'])) {
             $working_content = $this->safe_preg_replace(self::PATTERN_MSO_ATTRS, '<$1$2>', $working_content, 'mso_attrs');
         }
-        
+
         // Strip all styles if enabled
         if (!empty($cleaning_level['strip_all_styles'])) {
             $original_content = $working_content;
@@ -827,7 +888,7 @@ class WP_Word_Markup_Cleaner_Content {
                 $this->logger->log_debug("Original length: " . strlen($original_content) . ", Stripped length: " . strlen($working_content));
             }
         }
-        
+
         // Clean empty elements if enabled
         if (!empty($cleaning_level['empty_elements'])) {
             $working_content = $this->safe_preg_replace(self::PATTERN_EMPTY_SPAN, '', $working_content, 'empty_span');
@@ -836,25 +897,25 @@ class WP_Word_Markup_Cleaner_Content {
             $working_content = $this->safe_preg_replace(self::PATTERN_PT_REMNANTS, '', $working_content, 'pt_remnants');
             $working_content = $this->safe_preg_replace(self::PATTERN_EMPTY_CLASS, '', $working_content, 'empty_class');
         }
-        
+
         if ($old !== $working_content) {
             $modified = true;
             if ($this->options['enable_debug']) {
                 $this->logger->log_debug("Cleaned Word markup from content");
             }
         }
-        
+
         // Step 4: Clean each stored table individually if enabled
         if (!empty($cleaning_level['protect_tables']) && !empty($tables)) {
             foreach ($tables as $marker => $table) {
                 // Process the table to remove MSO-specific attributes while preserving structure
                 $cleaned_table = $this->clean_table($table, $cleaning_level);
-                
+
                 // Store cleaned tables back in the array
                 $tables[$marker] = $cleaned_table;
             }
         }
-        
+
         // Step 5: Clean each stored list individually if enabled
         if (!empty($cleaning_level['protect_lists']) && !empty($lists)) {
             foreach ($lists as $marker => $list) {
@@ -863,7 +924,7 @@ class WP_Word_Markup_Cleaner_Content {
                 $lists[$marker] = $cleaned_list;
             }
         }
-        
+
         // Step 6: Restore tables and lists to content
         if (!empty($cleaning_level['protect_tables']) && !empty($tables)) {
             foreach ($tables as $marker => $cleaned_table) {
@@ -876,20 +937,20 @@ class WP_Word_Markup_Cleaner_Content {
                 $working_content = str_replace($marker, $cleaned_list, $working_content);
             }
         }
-        
+
         // Step 7: Fix common tag structure issues
         if ($content_type === 'post' || $content_type === 'acf_wysiwyg') {
             // Ensure that tables aren't wrapped in p tags
             $working_content = $this->safe_preg_replace(self::PATTERN_TABLE_P_OPEN, '$1', $working_content, 'table_p_open');
             $working_content = $this->safe_preg_replace(self::PATTERN_TABLE_P_CLOSE, '$1', $working_content, 'table_p_close');
-            
+
             // Fix malformed nested p/span in tables
             $working_content = $this->safe_preg_replace(self::PATTERN_P_SPAN, '<p>$1</p>', $working_content, 'p_span');
-            
+
             // Fix table structure - remove improper nesting
             $working_content = $this->safe_preg_replace(self::PATTERN_NESTED_P, '<p $1>', $working_content, 'nested_p');
             $working_content = $this->safe_preg_replace(self::PATTERN_DOUBLE_CLOSE_P, '</p>', $working_content, 'double_close_p');
-            
+
             // Remove any inline styles in tags if style cleaning is enabled
             if (!empty($cleaning_level['style_attributes'])) {
                 $working_content = $this->safe_preg_replace(self::PATTERN_TEXT_INDENT, '$1', $working_content, 'text_indent');
@@ -897,23 +958,23 @@ class WP_Word_Markup_Cleaner_Content {
                 $working_content = $this->safe_preg_replace(self::PATTERN_LINE_HEIGHT_INLINE, '$1', $working_content, 'line_height_inline');
                 $working_content = $this->safe_preg_replace(self::PATTERN_FONT_INLINE, '$1', $working_content, 'font_inline');
             }
-            
+
             // Remove mso-specific inline styles if MSO cleaning is enabled
             if (!empty($cleaning_level['mso_styles'])) {
                 $working_content = $this->safe_preg_replace(self::PATTERN_MSO_LIST_INLINE, '$1', $working_content, 'mso_list_inline');
                 $working_content = $this->safe_preg_replace(self::PATTERN_MSO_INLINE, '$1', $working_content, 'mso_inline');
             }
-            
+
             // Final cleanup of any remaining style attributes
             if (!empty($cleaning_level['style_attributes'])) {
                 $working_content = $this->safe_preg_replace(self::PATTERN_STYLE_DOUBLE_QUOTE, '<$1$2>', $working_content, 'style_double_quote');
                 $working_content = $this->safe_preg_replace(self::PATTERN_STYLE_SINGLE_QUOTE, '<$1$2>', $working_content, 'style_single_quote');
             }
-            
+
             // SPECIFIC FIX: Remove the trailing '>' in list items
             $working_content = $this->safe_preg_replace(self::PATTERN_LI_TRAILING, '<li>', $working_content, 'li_trailing');
             $working_content = $this->safe_preg_replace(self::PATTERN_LI_TRAILING_SPACE, '<li>', $working_content, 'li_trailing_space');
-            
+
             // Fix any unclosed tags using WordPress' native function
             if (function_exists('balanceTags')) {
                 $working_content = balanceTags($working_content, true);
@@ -922,24 +983,16 @@ class WP_Word_Markup_Cleaner_Content {
                 }
             }
         }
-        
+
         // Final content - don't automatically re-escape quotes
         $final_content = $working_content;
-        
+
         // Compare and log the changes
         if ($modified || $final_content !== $original) {
             if ($this->options['enable_debug']) {
                 $this->log_detailed_changes($original, $final_content, strtoupper($content_type) . ' CONTENT');
             }
-            
-            // Store in local memory cache
-            $this->add_to_content_cache($cache_key, $final_content);
-            
-            // Store in WordPress object cache if available
-            if (function_exists('wp_cache_set')) {
-                wp_cache_set($cache_key, $final_content, 'word_markup_cleaner', 3600); // Cache for 1 hour
-            }
-            
+
             try {
                 return $final_content;
             } catch (Exception $e) {
@@ -954,11 +1007,66 @@ class WP_Word_Markup_Cleaner_Content {
             }
             return $original;
         }
-        
+
         // Force garbage collection after processing large content
         if (strlen($content) > 500000 && function_exists('gc_collect_cycles')) {
             gc_collect_cycles();
         }
+    }
+
+    // [Other methods remain unchanged - maintain clean_table, clean_list, etc.]
+
+    /**
+     * Set max cache entries for content cache
+     *
+     * @param int $max_entries Maximum number of entries
+     */
+    public function set_max_cache_entries($max_entries)
+    {
+        $this->max_cache_entries = max(10, min(1000, (int) $max_entries));
+    }
+
+    /**
+     * Enable or disable DOM processing
+     *
+     * @param bool $enabled Whether DOM processing should be enabled
+     */
+    public function set_dom_processing_enabled($enabled)
+    {
+        $this->dom_processing_enabled = $this->settings_manager->get_option('use_dom_processing', true) && class_exists('DOMDocument');
+
+        if ($this->options['enable_debug']) {
+            $this->logger->log_debug("DOM processing enabled setting: " . var_export($this->settings_manager->get_option('use_dom_processing', true), true));
+        }
+        
+    }
+
+    /**
+     * Check if DOM processing is enabled and available
+     *
+     * @return bool Whether DOM processing is enabled
+     */
+    public function is_dom_processing_enabled()
+    {
+        return $this->dom_processing_enabled;
+    }
+
+    /**
+     * Lazy-load the DOM processor when needed
+     *
+     * @return WP_Word_Markup_Cleaner_DOM_Processor DOM processor instance
+     */
+    private function get_dom_processor()
+    {
+        if ($this->dom_processor === null) {
+            $this->dom_processor = new WP_Word_Markup_Cleaner_DOM_Processor($this->logger, $this);
+
+            if ($this->options['enable_debug']) {
+                $this->logger->log_debug("DOM Processor initialized");
+            }
+        }
+
+        return $this->dom_processor;
     }
         
     /**
@@ -968,7 +1076,7 @@ class WP_Word_Markup_Cleaner_Content {
      * @param array $cleaning_level Cleaning levels
      * @return string The cleaned table
      */
-    private function clean_table($table, $cleaning_level) {
+    public function clean_table($table, $cleaning_level) {
         // Use static cache to avoid reprocessing identical tables
         static $table_cache = array();
         
@@ -1090,7 +1198,7 @@ class WP_Word_Markup_Cleaner_Content {
      * @param array $cleaning_level Cleaning levels
      * @return string The cleaned list
      */
-    private function clean_list($list, $marker, $cleaning_level) {
+    public function clean_list($list, $marker, $cleaning_level) {
         // Use static cache to avoid reprocessing identical lists
         static $list_cache = array();
         

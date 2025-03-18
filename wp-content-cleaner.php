@@ -26,7 +26,7 @@ define('WP_WORD_MARKUP_CLEANER_URL', plugin_dir_url(__FILE__));
 /**
  * The main plugin class to initialize everything
  */
-class WP_Word_Markup_Cleaner_Plugin { 
+class WP_Word_Markup_Cleaner_Plugin {
     
     /**
      * Plugin instance
@@ -62,6 +62,13 @@ class WP_Word_Markup_Cleaner_Plugin {
      * @var WP_Word_Markup_Cleaner_Content
      */
     private $content_cleaner;
+
+    /**
+     * DOM processor instance
+     *
+     * @var WP_Word_Markup_Cleaner_DOM_Processor
+     */
+    private $dom_processor;
     
     /**
      * ACF integration instance
@@ -113,9 +120,11 @@ class WP_Word_Markup_Cleaner_Plugin {
         // Include required files in the correct order
         require_once WP_WORD_MARKUP_CLEANER_DIR . 'includes/class-settings-manager.php';
         require_once WP_WORD_MARKUP_CLEANER_DIR . 'includes/class-logger.php';
+        require_once WP_WORD_MARKUP_CLEANER_DIR . 'includes/class-dom-processor.php';
         require_once WP_WORD_MARKUP_CLEANER_DIR . 'includes/class-content-cleaner.php';
         require_once WP_WORD_MARKUP_CLEANER_DIR . 'includes/class-acf-integration.php';
         require_once WP_WORD_MARKUP_CLEANER_DIR . 'includes/class-settings.php';
+        require_once WP_WORD_MARKUP_CLEANER_DIR . 'includes/class-cache-utility.php';
     }
 
     /**

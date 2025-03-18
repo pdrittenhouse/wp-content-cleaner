@@ -144,7 +144,8 @@ class WP_Word_Markup_Cleaner_Settings_Manager {
             'enable_acf_cleaning' => 1,
             'protect_tables' => 1,
             'protect_lists' => 1,
-            'enable_debug' => 0
+            'enable_debug' => 0,
+            'use_dom_processing' => 1
         );
         
         // Get options with defaults for any missing values
@@ -340,6 +341,7 @@ class WP_Word_Markup_Cleaner_Settings_Manager {
             case 'page':
             case 'wp_content':
                 $levels = array(
+                    'use_dom_processing' => true,
                     'xml_namespaces' => true,
                     'conditional_comments' => true,
                     'mso_classes' => true, 
@@ -357,6 +359,7 @@ class WP_Word_Markup_Cleaner_Settings_Manager {
             // ACF field types
             case 'acf_wysiwyg':
                 $levels = array(
+                    'use_dom_processing' => true,
                     'xml_namespaces' => true,
                     'conditional_comments' => true,
                     'mso_classes' => true, 
@@ -374,6 +377,7 @@ class WP_Word_Markup_Cleaner_Settings_Manager {
             case 'acf_text':
             case 'acf_textarea':
                 $levels = array(
+                    'use_dom_processing' => true,
                     'xml_namespaces' => true,
                     'conditional_comments' => true,
                     'mso_classes' => true, 
@@ -391,6 +395,7 @@ class WP_Word_Markup_Cleaner_Settings_Manager {
             case 'acf_block_field':
             case 'acf_block_content':
                 $levels = array(
+                    'use_dom_processing' => true,
                     'xml_namespaces' => true,
                     'conditional_comments' => true,
                     'mso_classes' => true, 
@@ -408,6 +413,7 @@ class WP_Word_Markup_Cleaner_Settings_Manager {
             // WordPress excerpts
             case 'excerpt':
                 $levels = array(
+                    'use_dom_processing' => true,
                     'xml_namespaces' => true,
                     'conditional_comments' => true,
                     'mso_classes' => true, 
@@ -425,6 +431,7 @@ class WP_Word_Markup_Cleaner_Settings_Manager {
                 
             default:
                 $levels = array(
+                    'use_dom_processing' => true,
                     'xml_namespaces' => true,
                     'conditional_comments' => true,
                     'mso_classes' => true, 
