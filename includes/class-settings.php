@@ -1186,7 +1186,7 @@ class WP_Word_Markup_Cleaner_Settings
 
                     <div class="test-content-container">
                         <label for="test_content"><strong>Content to Clean:</strong></label>
-                        <textarea name="test_content" id="test_content" placeholder="Paste Word content here to see what gets cleaned..."><?php echo isset($_POST['test_content']) ? esc_textarea($_POST['test_content']) : ''; ?></textarea>
+                        <textarea name="test_content" id="test_content" placeholder="Paste Word content here to see what gets cleaned..."><?php echo isset($_POST['test_content']) ? esc_textarea(stripslashes($_POST['test_content'])) : ''; ?></textarea>
                     </div>
 
                     <div class="test-options">

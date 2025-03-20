@@ -320,7 +320,7 @@ class WP_Word_Markup_Cleaner_DOM_Processor
             $flags = LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD;
 
             // Handle UTF-8 correctly
-            $content = mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8');
+            $content = htmlspecialchars_decode(htmlentities($content, ENT_QUOTES, 'UTF-8', false));
 
             // Load the HTML
             $success = $dom->loadHTML($content, $flags);
